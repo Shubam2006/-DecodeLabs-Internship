@@ -1,0 +1,113 @@
+# Tech Stack Recommender
+**DecodeLabs Industrial Training Kit | Batch 2026 | Project 3 — AI Recommendation Logic**
+
+---
+
+## Overview
+
+A content-based filtering recommendation system that maps a user's skills to the best-fit tech career roles using **TF-IDF weighting** and **Cosine Similarity**. Built as the capstone for Project 3 of the DecodeLabs AI track.
+
+---
+
+## Project Structure
+
+```
+tech_recommender/
+├── index.html        # Web UI — open directly in browser (no server needed)
+├── recommender.py    # Python engine — run in terminal
+├── raw_skills.csv    # Dataset — 20 job roles × 10 skills each
+└── README.md         # This file
+```
+
+---
+
+## How to Run
+
+### Option 1 — Browser (index.html)
+1. Download all files into one folder
+2. Double-click `index.html` to open in browser
+3. Type your skills → press `Enter` after each
+4. Click **Run Recommender**
+
+### Option 2 — Terminal (recommender.py)
+```bash
+python recommender.py
+```
+Requirements: Python 3.x — no external libraries needed (uses only `math` and `csv`)
+
+---
+
+## Algorithm
+
+### Pipeline (4 Steps)
+```
+INPUT (user skills)  →  PROCESS (TF-IDF + Cosine Similarity)  →  OUTPUT (Top-N roles)
+
+Step 1 — Ingestion   : Capture user skills (minimum 3 required)
+Step 2 — Scoring     : Compute cosine similarity for every job role
+Step 3 — Sorting     : Sort roles by similarity score (descending)
+Step 4 — Filtering   : Return Top-N results only
+```
+
+### TF-IDF Weighting
+```
+TF(t, d)  = count of term t in document d / total terms in d
+IDF(t)    = log( N / number of documents containing t )
+TF-IDF    = TF × IDF
+```
+- **TF** rewards skills that appear frequently in a role
+- **IDF** penalises generic skills (e.g. `git`, `python`) and rewards specific ones (e.g. `solidity`, `ros`)
+
+### Cosine Similarity
+```
+cos(θ) = (A · B) / (||A|| × ||B||)
+
+Score 1.0  →  Perfect match
+Score 0.0  →  No overlap
+```
+Cosine similarity is magnitude-invariant — it compares the **direction** of skill vectors, not their size.
+
+---
+
+## Dataset
+
+`raw_skills.csv` contains 20 job roles:
+
+| Role | Key Skills |
+|------|-----------|
+| Data Scientist | Python, SQL, Machine Learning, Statistics |
+| Machine Learning Engineer | Python, TensorFlow, PyTorch, Deep Learning |
+| DevOps Engineer | AWS, Docker, Kubernetes, CI/CD, Linux |
+| Frontend Developer | JavaScript, React, HTML, CSS, TypeScript |
+| Full Stack Developer | JavaScript, Python, React, Node.js, SQL |
+| Cybersecurity Analyst | Networking, Security, Linux, Cryptography |
+| Blockchain Developer | Solidity, Web3, Cryptography, Ethereum |
+| NLP Engineer | Python, NLP, Transformers, BERT, PyTorch |
+| Robotics Engineer | Python, C++, ROS, Control Systems |
+| ... and 11 more | |
+
+---
+
+## Key Concepts
+
+| Concept | Description |
+|---------|-------------|
+| Content-Based Filtering | Recommends based on item attributes, not user history |
+| Cold Start Problem | New user has no history → fixed by asking minimum 3 skills upfront |
+| Vector Space Model | Skills mapped to numerical vectors in a shared vocabulary |
+| Top-N Filtering | Only highest-scoring matches shown to avoid choice overload |
+
+---
+
+## Sample Output
+
+```
+Input: ["Python", "TensorFlow", "Deep Learning"]
+
+#1  Machine Learning Engineer   —  47.2%  match
+#2  Computer Vision Engineer    —  46.4%  match
+#3  AI Research Engineer        —  43.1%  match
+```
+
+---
+

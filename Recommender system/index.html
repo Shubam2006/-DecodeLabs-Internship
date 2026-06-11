@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Tech Stack Recommender — DecodeLabs Project 3</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0d0f14;
+    --surface:   #13161e;
+    --panel:     #1a1e29;
+    --border:    #252a38;
+    --accent:    #5b7fff;
+    --accent2:   #a78bfa;
+    --green:     #34d399;
+    --amber:     #fbbf24;
+    --text:      #e8eaf0;
+    --muted:     #6b7280;
+    --mono:      'Space Mono', monospace;
+    --sans:      'Space Grotesk', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Grid noise texture ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(91,127,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(91,127,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 48px;
+    gap: 16px;
+  }
+  .header-left {}
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    background: rgba(91,127,255,0.1);
+    border: 1px solid rgba(91,127,255,0.25);
+    padding: 4px 10px;
+    border-radius: 4px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .badge::before { content: '◈'; font-size: 10px; }
+  h1 {
+    font-size: clamp(26px, 5vw, 38px);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+  h1 span { color: var(--accent); }
+  .subtitle {
+    margin-top: 10px;
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.6;
+    max-width: 420px;
+  }
+  .algo-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent2);
+    background: rgba(167,139,250,0.08);
+    border: 1px solid rgba(167,139,250,0.2);
+    padding: 3px 8px;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+
+  /* ── Pipeline indicator ── */
+  .pipeline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 36px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .pipe-step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 8px;
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--muted);
+    transition: all 0.3s;
+    position: relative;
+  }
+  .pipe-step:not(:last-child)::after {
+    content: '→';
+    position: absolute;
+    right: -8px;
+    color: var(--border);
+    font-size: 14px;
+    z-index: 2;
+  }
+  .pipe-step.active {
+    color: var(--accent);
+    background: rgba(91,127,255,0.06);
+  }
+  .pipe-step.done {
+    color: var(--green);
+  }
+  .pipe-step .icon { font-size: 18px; margin-bottom: 4px; }
+  .pipe-step .label { letter-spacing: 0.06em; text-transform: uppercase; }
+
+  /* ── Input section ── */
+  .input-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    margin-bottom: 24px;
+  }
+  .input-card h2 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+  .input-card p {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  /* Skill chips input area */
+  .chips-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 52px;
+    padding: 10px 12px;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    cursor: text;
+    transition: border-color 0.2s;
+    margin-bottom: 12px;
+    align-items: center;
+  }
+  .chips-wrapper:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(91,127,255,0.12);
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(91,127,255,0.15);
+    border: 1px solid rgba(91,127,255,0.3);
+    color: #a5b4fc;
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 3px 10px 3px 10px;
+    border-radius: 4px;
+    animation: chipIn 0.15s ease;
+  }
+  @keyframes chipIn {
+    from { opacity:0; transform: scale(0.85); }
+    to   { opacity:1; transform: scale(1); }
+  }
+  .chip .remove {
+    cursor: pointer;
+    opacity: 0.5;
+    font-size: 14px;
+    line-height: 1;
+    transition: opacity 0.15s;
+    background: none; border: none; color: inherit; padding: 0;
+  }
+  .chip .remove:hover { opacity: 1; }
+  #skillInput {
+    flex: 1;
+    min-width: 120px;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text);
+    caret-color: var(--accent);
+  }
+  #skillInput::placeholder { color: var(--muted); }
+
+  .skill-counter {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .skill-counter .count { color: var(--accent); font-weight: 700; }
+  .skill-counter.ok .count { color: var(--green); }
+
+  /* Suggestions */
+  .suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+  .sug-label {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    width: 100%;
+    margin-bottom: 2px;
+  }
+  .sug-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 11px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .sug-chip:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(91,127,255,0.08);
+  }
+  .sug-chip.used {
+    opacity: 0.3;
+    pointer-events: none;
+  }
+
+  /* Controls row */
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .top-n-label {
+    font-size: 13px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .top-n-select {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 7px 12px;
+    border-radius: 6px;
+    outline: none;
+    cursor: pointer;
+  }
+  .top-n-select:focus { border-color: var(--accent); }
+
+  .btn-run {
+    flex: 1;
+    min-width: 160px;
+    padding: 12px 24px;
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
+  }
+  .btn-run:hover { background: #7b93ff; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(91,127,255,0.35); }
+  .btn-run:active { transform: translateY(0); }
+  .btn-run:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  .btn-clear {
+    padding: 11px 16px;
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-clear:hover { border-color: #ef4444; color: #ef4444; }
+
+  /* ── Error ── */
+  .error-msg {
+    display: none;
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.25);
+    color: #fca5a5;
+    font-size: 13px;
+    font-family: var(--mono);
+    padding: 10px 14px;
+    border-radius: 7px;
+    margin-bottom: 16px;
+  }
+  .error-msg.show { display: block; }
+
+  /* ── Results section ── */
+  #resultsSection { display: none; }
+  #resultsSection.show { display: block; }
+
+  .results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .results-header h2 {
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .results-header .query-info {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-align: right;
+  }
+
+  /* Result cards */
+  .result-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 24px;
+    margin-bottom: 14px;
+    position: relative;
+    overflow: hidden;
+    animation: slideUp 0.3s ease forwards;
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  @keyframes slideUp {
+    to { opacity:1; transform: translateY(0); }
+  }
+  .result-card:nth-child(1) { animation-delay: 0.05s; }
+  .result-card:nth-child(2) { animation-delay: 0.12s; }
+  .result-card:nth-child(3) { animation-delay: 0.19s; }
+  .result-card:nth-child(4) { animation-delay: 0.26s; }
+  .result-card:nth-child(5) { animation-delay: 0.33s; }
+
+  .result-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--accent);
+    border-radius: 3px 0 0 3px;
+  }
+  .result-card.rank-1::before { background: linear-gradient(to bottom, #fbbf24, #f59e0b); }
+  .result-card.rank-2::before { background: linear-gradient(to bottom, #d1d5db, #9ca3af); }
+  .result-card.rank-3::before { background: linear-gradient(to bottom, #f97316, #ea580c); }
+
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    gap: 12px;
+  }
+  .rank-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 700;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 3px;
+    white-space: nowrap;
+    margin-right: 10px;
+  }
+  .role-name {
+    font-size: 18px;
+    font-weight: 700;
+    flex: 1;
+    letter-spacing: -0.01em;
+  }
+  .score-block {
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .score-pct {
+    font-family: var(--mono);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .rank-1 .score-pct { color: #fbbf24; }
+  .rank-2 .score-pct { color: #d1d5db; }
+  .rank-3 .score-pct { color: #f97316; }
+  .score-label {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* Score bar */
+  .score-bar-wrap {
+    height: 4px;
+    background: var(--panel);
+    border-radius: 2px;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+  .score-bar {
+    height: 100%;
+    border-radius: 2px;
+    background: var(--accent);
+    transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    width: 0;
+  }
+  .rank-1 .score-bar { background: linear-gradient(to right, #fbbf24, #f59e0b); }
+  .rank-2 .score-bar { background: linear-gradient(to right, #d1d5db, #9ca3af); }
+  .rank-3 .score-bar { background: linear-gradient(to right, #f97316, #ea580c); }
+
+  /* Matched skills */
+  .match-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .match-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    padding-top: 3px;
+  }
+  .match-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 11px;
+    background: rgba(52,211,153,0.1);
+    border: 1px solid rgba(52,211,153,0.25);
+    color: var(--green);
+  }
+  .match-chip::before { content: '✓'; font-size: 10px; }
+  .no-match {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  /* ── Full table toggle ── */
+  .table-toggle {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-top: 10px;
+    overflow: hidden;
+  }
+  .table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 13px;
+    font-family: var(--mono);
+    color: var(--muted);
+    transition: background 0.15s;
+  }
+  .table-header:hover { background: var(--panel); color: var(--text); }
+  .chevron { transition: transform 0.2s; }
+  .table-header.open .chevron { transform: rotate(180deg); }
+  .full-table { display: none; }
+  .full-table.show { display: block; }
+  .rank-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .rank-table th {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    padding: 10px 20px;
+    text-align: left;
+    border-top: 1px solid var(--border);
+    background: rgba(0,0,0,0.2);
+  }
+  .rank-table td {
+    padding: 11px 20px;
+    border-top: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .rank-table tr:hover td { background: rgba(91,127,255,0.04); color: var(--text); }
+  .rank-table .td-role { color: var(--text); font-weight: 600; }
+  .rank-table .td-score { color: var(--accent); }
+  .mini-bar-wrap { width: 80px; height: 4px; background: var(--panel); border-radius: 2px; display: inline-block; vertical-align: middle; overflow: hidden; }
+  .mini-bar { height: 100%; background: var(--accent); border-radius: 2px; }
+
+  /* ── Footer ── */
+  footer {
+    margin-top: 56px;
+    text-align: center;
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    padding-top: 24px;
+  }
+  footer a { color: var(--accent2); text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <div class="header-left">
+      <div class="badge">DecodeLabs · Project 3 · Batch 2026</div>
+      <h1>Tech Stack<br><span>Recommender</span></h1>
+      <p class="subtitle">Enter your skills and get matched to the most aligned tech career paths — powered by TF-IDF + Cosine Similarity.</p>
+    </div>
+    <div class="algo-tag">TF‑IDF + cos(θ)</div>
+  </header>
+
+  <!-- Pipeline indicator -->
+  <div class="pipeline" id="pipeline">
+    <div class="pipe-step active" id="p1"><span class="icon">⬇</span><span class="label">Ingest</span></div>
+    <div class="pipe-step"        id="p2"><span class="icon">⚙</span><span class="label">Score</span></div>
+    <div class="pipe-step"        id="p3"><span class="icon">↕</span><span class="label">Sort</span></div>
+    <div class="pipe-step"        id="p4"><span class="icon">✂</span><span class="label">Filter</span></div>
+  </div>
+
+  <!-- Input card -->
+  <div class="input-card">
+    <h2>Your Skills</h2>
+    <p>Type a skill and press <kbd style="font-family:var(--mono);font-size:11px;background:var(--panel);padding:1px 5px;border-radius:3px;border:1px solid var(--border)">Enter</kbd> or <kbd style="font-family:var(--mono);font-size:11px;background:var(--panel);padding:1px 5px;border-radius:3px;border:1px solid var(--border)">,</kbd> to add it. Minimum 3 skills required.</p>
+
+    <div class="chips-wrapper" id="chipsWrapper" onclick="document.getElementById('skillInput').focus()">
+      <input type="text" id="skillInput" placeholder="e.g. Python, Docker, SQL …" autocomplete="off" spellcheck="false"/>
+    </div>
+
+    <div class="skill-counter" id="counter">Skills added: <span class="count">0</span> / 3 minimum</div>
+
+    <!-- Suggestions -->
+    <div class="suggestions" id="suggestions">
+      <span class="sug-label">Quick add →</span>
+      <!-- Populated by JS -->
+    </div>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <div class="controls">
+      <span class="top-n-label">Show top</span>
+      <select class="top-n-select" id="topN">
+        <option value="3">3</option>
+        <option value="5">5</option>
+        <option value="10">10</option>
+      </select>
+      <button class="btn-run" id="btnRun" onclick="runRecommender()" disabled>Run Recommender →</button>
+      <button class="btn-clear" onclick="clearAll()">Clear</button>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="resultsSection">
+    <div class="results-header">
+      <h2>Recommendations</h2>
+      <div class="query-info" id="queryInfo"></div>
+    </div>
+    <div id="resultsCards"></div>
+
+    <!-- Full table toggle -->
+    <div class="table-toggle">
+      <div class="table-header" id="tableToggle" onclick="toggleTable()">
+        <span>View full similarity ranking (all roles)</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="full-table" id="fullTable">
+        <table class="rank-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Job Role</th>
+              <th>Similarity</th>
+              <th>Visual</th>
+              <th>Matched Skills</th>
+            </tr>
+          </thead>
+          <tbody id="fullTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    AI Recommendation Logic · Content-Based Filtering · TF-IDF + Cosine Similarity<br>
+    <span style="margin-top:4px;display:inline-block">Built for DecodeLabs Industrial Training Kit — Batch 2026</span>
+  </footer>
+</div>
+
+<script>
+// ──────────────────────────────────────────────────
+// DATA: raw_skills dataset (embedded for browser)
+// ──────────────────────────────────────────────────
+const DATASET = {
+  "Data Scientist":           ["python","sql","machine_learning","data_analysis","statistics","pandas","numpy","scikit_learn","visualization","jupyter"],
+  "Machine Learning Engineer":["python","machine_learning","tensorflow","pytorch","deep_learning","neural_networks","scikit_learn","data_pipelines","mlops","docker"],
+  "Data Analyst":             ["sql","excel","power_bi","tableau","data_visualization","statistics","python","reporting","dashboards"],
+  "Backend Developer":        ["python","java","node.js","sql","rest_apis","databases","docker","git","authentication","microservices"],
+  "Frontend Developer":       ["javascript","react","html","css","typescript","ui_ux","git","redux","responsive_design","api_integration"],
+  "Full Stack Developer":     ["javascript","python","react","node.js","sql","html","css","git","rest_apis","docker"],
+  "DevOps Engineer":          ["aws","docker","kubernetes","ci_cd","linux","git","automation","monitoring","cloud_infrastructure","terraform"],
+  "Cloud Architect":          ["aws","azure","gcp","cloud_infrastructure","terraform","docker","kubernetes","networking","security","serverless"],
+  "Cybersecurity Analyst":    ["networking","security","linux","python","penetration_testing","firewalls","cryptography","siem","incident_response"],
+  "Mobile Developer":         ["swift","kotlin","react_native","flutter","java","android","ios","git","rest_apis","ui_ux"],
+  "AI Research Engineer":     ["python","pytorch","tensorflow","deep_learning","mathematics","optimization","research","papers","neural_networks"],
+  "Data Engineer":            ["python","sql","spark","hadoop","etl","data_pipelines","aws","cloud_infrastructure","databases","airflow"],
+  "Site Reliability Engineer":["linux","python","automation","monitoring","docker","kubernetes","aws","incident_management","performance"],
+  "Blockchain Developer":     ["solidity","web3","javascript","cryptography","smart_contracts","ethereum","python","go","distributed_systems"],
+  "NLP Engineer":             ["python","nlp","transformers","bert","pytorch","scikit_learn","linguistics","text_processing","machine_learning"],
+  "Computer Vision Engineer": ["python","opencv","tensorflow","deep_learning","image_processing","neural_networks","mathematics","pytorch"],
+  "Systems Programmer":       ["c","c++","linux","operating_systems","memory_management","networking","performance","optimization","assembly"],
+  "Game Developer":           ["c++","unity","python","opengl","mathematics","physics_simulation","3d_graphics","game_design"],
+  "Database Administrator":   ["sql","postgresql","mysql","oracle","performance_tuning","backup","indexing","query_optimization","security"],
+  "Robotics Engineer":        ["python","c++","ros","robotics","control_systems","mathematics","sensors","embedded_systems","automation"],
+};
+
+const SUGGESTIONS = [
+  "Python","JavaScript","SQL","Java","React","Docker","AWS","TensorFlow",
+  "Kubernetes","Linux","Node.js","Git","Machine_Learning","TypeScript","C++",
+  "Swift","Flutter","Tableau","Spark","PyTorch","Azure","GCP","Rust","Go",
+  "HTML","CSS","MongoDB","Redis","GraphQL","PostgreSQL","scikit_learn","deep_learning","neural_networks"
+];
+
+let userSkills = [];
+
+// ──────────────────────────────────────────────────
+// UI: Chip input
+// ──────────────────────────────────────────────────
+const skillInput = document.getElementById('skillInput');
+const chipsWrapper = document.getElementById('chipsWrapper');
+const counter = document.getElementById('counter');
+const btnRun = document.getElementById('btnRun');
+
+// Build suggestions
+const sugContainer = document.getElementById('suggestions');
+SUGGESTIONS.forEach(s => {
+  const btn = document.createElement('button');
+  btn.className = 'sug-chip';
+  btn.dataset.skill = s;
+  btn.textContent = s;
+  btn.onclick = () => addSkill(s);
+  sugContainer.appendChild(btn);
+});
+
+skillInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ',') {
+    e.preventDefault();
+    const val = skillInput.value.trim().replace(/,/g,'');
+    if (val) addSkill(val);
+  } else if (e.key === 'Backspace' && skillInput.value === '' && userSkills.length > 0) {
+    removeSkill(userSkills[userSkills.length - 1]);
+  }
+});
+
+function normalise(s) {
+  return s.toLowerCase().trim().replace(/\s+/g, '_');
+}
+
+function addSkill(raw) {
+  const skill = normalise(raw);
+  if (!skill) return;
+  if (userSkills.includes(skill)) {
+    flashInput(); return;
+  }
+  userSkills.push(skill);
+  renderChips();
+  skillInput.value = '';
+  updateCounter();
+  updateSuggestions();
+  setPipelineStage(userSkills.length >= 3 ? 2 : 1);
+  hideError();
+}
+
+function removeSkill(skill) {
+  userSkills = userSkills.filter(s => s !== skill);
+  renderChips();
+  updateCounter();
+  updateSuggestions();
+  if (userSkills.length < 3) setPipelineStage(1);
+}
+
+function renderChips() {
+  // Remove existing chips (keep input)
+  const existing = chipsWrapper.querySelectorAll('.chip');
+  existing.forEach(c => c.remove());
+  userSkills.forEach(s => {
+    const chip = document.createElement('span');
+    chip.className = 'chip';
+    chip.innerHTML = `${s}<button class="remove" onclick="removeSkill('${s}')" title="Remove">×</button>`;
+    chipsWrapper.insertBefore(chip, skillInput);
+  });
+}
+
+function updateCounter() {
+  const n = userSkills.length;
+  const span = counter.querySelector('.count');
+  span.textContent = n;
+  if (n >= 3) {
+    counter.classList.add('ok');
+    counter.innerHTML = `Skills added: <span class="count ok">${n}</span> ✓ Ready to run`;
+    btnRun.disabled = false;
+  } else {
+    counter.classList.remove('ok');
+    counter.innerHTML = `Skills added: <span class="count">${n}</span> / 3 minimum`;
+    btnRun.disabled = true;
+  }
+}
+
+function updateSuggestions() {
+  sugContainer.querySelectorAll('.sug-chip').forEach(btn => {
+    const skill = normalise(btn.dataset.skill);
+    btn.classList.toggle('used', userSkills.includes(skill));
+  });
+}
+
+function flashInput() {
+  chipsWrapper.style.borderColor = '#f59e0b';
+  setTimeout(() => { chipsWrapper.style.borderColor = ''; }, 500);
+}
+
+function clearAll() {
+  userSkills = [];
+  renderChips();
+  updateCounter();
+  updateSuggestions();
+  hideError();
+  setPipelineStage(1);
+  document.getElementById('resultsSection').classList.remove('show');
+}
+
+// ──────────────────────────────────────────────────
+// ALGORITHM: TF-IDF + Cosine Similarity
+// ──────────────────────────────────────────────────
+
+function computeTF(skillList) {
+  const tf = {};
+  const total = skillList.length;
+  for (const s of skillList) tf[s] = (tf[s] || 0) + 1;
+  for (const s in tf) tf[s] /= total;
+  return tf;
+}
+
+function computeIDF(dataset) {
+  const N = Object.keys(dataset).length;
+  const df = {};
+  for (const skills of Object.values(dataset)) {
+    for (const s of [...new Set(skills)]) df[s] = (df[s] || 0) + 1;
+  }
+  const idf = {};
+  for (const s in df) idf[s] = Math.log(N / df[s]);
+  return idf;
+}
+
+function vectorize(skills, vocabulary, idf) {
+  const tf = computeTF(skills);
+  return vocabulary.map(term => (tf[term] || 0) * (idf[term] || 0));
+}
+
+function cosineSimilarity(a, b) {
+  const dot = a.reduce((sum, v, i) => sum + v * b[i], 0);
+  const magA = Math.sqrt(a.reduce((sum, v) => sum + v * v, 0));
+  const magB = Math.sqrt(b.reduce((sum, v) => sum + v * v, 0));
+  if (magA === 0 || magB === 0) return 0;
+  return dot / (magA * magB);
+}
+
+function buildVocabulary(dataset) {
+  const vocab = new Set();
+  for (const skills of Object.values(dataset)) skills.forEach(s => vocab.add(s));
+  return [...vocab].sort();
+}
+
+function runRecommendation(userSkillsIn, topN) {
+  const vocabulary = buildVocabulary(DATASET);
+  const idf = computeIDF(DATASET);
+  const userVec = vectorize(userSkillsIn, vocabulary, idf);
+
+  const scored = [];
+  for (const [role, skills] of Object.entries(DATASET)) {
+    const itemVec = vectorize(skills, vocabulary, idf);
+    const score = cosineSimilarity(userVec, itemVec);
+    const matched = userSkillsIn.filter(s => skills.includes(s));
+    scored.push({ role, score, matched });
+  }
+
+  scored.sort((a, b) => b.score - a.score);
+  return { top: scored.slice(0, topN), all: scored };
+}
+
+// ──────────────────────────────────────────────────
+// UI: Run & Render
+// ──────────────────────────────────────────────────
+
+function runRecommender() {
+  hideError();
+  if (userSkills.length < 3) {
+    showError('Please add at least 3 skills before running.');
+    return;
+  }
+
+  const topN = parseInt(document.getElementById('topN').value);
+
+  // Animate pipeline
+  animatePipeline(() => {
+    const { top, all } = runRecommendation(userSkills, topN);
+    renderResults(top, all, topN);
+  });
+}
+
+function animatePipeline(cb) {
+  const stages = ['p1','p2','p3','p4'];
+  let i = 0;
+  btnRun.disabled = true;
+  btnRun.textContent = 'Processing…';
+
+  function next() {
+    if (i > 0) {
+      document.getElementById(stages[i-1]).classList.remove('active');
+      document.getElementById(stages[i-1]).classList.add('done');
+    }
+    if (i < stages.length) {
+      document.getElementById(stages[i]).classList.add('active');
+      i++;
+      setTimeout(next, 280);
+    } else {
+      setTimeout(() => {
+        btnRun.disabled = false;
+        btnRun.textContent = 'Run Recommender →';
+        cb();
+      }, 150);
+    }
+  }
+  next();
+}
+
+function setPipelineStage(stage) {
+  ['p1','p2','p3','p4'].forEach((id, idx) => {
+    const el = document.getElementById(id);
+    el.classList.remove('active', 'done');
+    if (idx + 1 === stage) el.classList.add('active');
+    if (idx + 1 < stage) el.classList.add('done');
+  });
+}
+
+function renderResults(top, all, topN) {
+  const section = document.getElementById('resultsSection');
+  const cards   = document.getElementById('resultsCards');
+  const info    = document.getElementById('queryInfo');
+  const tableBody = document.getElementById('fullTableBody');
+
+  info.innerHTML = `Query: [${userSkills.join(', ')}]<br>Algorithm: TF-IDF · Cosine Similarity`;
+
+  // ── Top-N cards ──
+  cards.innerHTML = '';
+  const medals = ['🥇','🥈','🥉'];
+  top.forEach((item, i) => {
+    const pct = (item.score * 100).toFixed(1);
+    const matchedHTML = item.matched.length > 0
+      ? item.matched.map(s => `<span class="match-chip">${s}</span>`).join('')
+      : '<span class="no-match">profile vector aligned (no direct tag overlap)</span>';
+
+    const card = document.createElement('div');
+    card.className = `result-card rank-${i + 1}`;
+    card.innerHTML = `
+      <div class="card-top">
+        <div style="display:flex;align-items:center;flex:1">
+          <span class="rank-badge">${medals[i] || '#' + (i+1)}</span>
+          <span class="role-name">${item.role}</span>
+        </div>
+        <div class="score-block">
+          <div class="score-pct">${pct}%</div>
+          <div class="score-label">match score</div>
+        </div>
+      </div>
+      <div class="score-bar-wrap">
+        <div class="score-bar" data-score="${item.score}"></div>
+      </div>
+      <div class="match-row">
+        <span class="match-label">Matched:</span>
+        ${matchedHTML}
+      </div>`;
+    cards.appendChild(card);
+
+    // Animate bar after paint
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        card.querySelector('.score-bar').style.width = `${item.score * 100}%`;
+      }, (i + 1) * 100);
+    });
+  });
+
+  // ── Full table ──
+  tableBody.innerHTML = '';
+  all.forEach((item, i) => {
+    const pct = (item.score * 100).toFixed(2);
+    const barWidth = Math.round(item.score * 80);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${i + 1}</td>
+      <td class="td-role">${item.role}</td>
+      <td class="td-score">${pct}%</td>
+      <td><span class="mini-bar-wrap"><span class="mini-bar" style="width:${barWidth}px"></span></span></td>
+      <td>${item.matched.length > 0 ? item.matched.join(', ') : '—'}</td>`;
+    tableBody.appendChild(tr);
+  });
+
+  // Reset table toggle
+  document.getElementById('fullTable').classList.remove('show');
+  document.getElementById('tableToggle').classList.remove('open');
+
+  section.classList.add('show');
+  section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function toggleTable() {
+  const ft = document.getElementById('fullTable');
+  const th = document.getElementById('tableToggle');
+  ft.classList.toggle('show');
+  th.classList.toggle('open');
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = '⚠  ' + msg;
+  el.classList.add('show');
+}
+function hideError() {
+  document.getElementById('errorMsg').classList.remove('show');
+}
+
+// Init
+updateCounter();
+</script>
+</body>
+</html>

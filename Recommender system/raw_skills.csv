@@ -1,0 +1,21 @@
+job_role,skills
+Data Scientist,Python SQL machine_learning data_analysis statistics pandas numpy scikit_learn visualization jupyter
+Machine Learning Engineer,Python machine_learning TensorFlow PyTorch deep_learning neural_networks scikit_learn data_pipelines MLOps Docker
+Data Analyst,SQL Excel Power_BI Tableau data_visualization statistics Python reporting dashboards
+Backend Developer,Python Java Node.js SQL REST_APIs databases Docker Git authentication microservices
+Frontend Developer,JavaScript React HTML CSS TypeScript UI_UX Git Redux responsive_design API_integration
+Full Stack Developer,JavaScript Python React Node.js SQL HTML CSS Git REST_APIs Docker
+DevOps Engineer,AWS Docker Kubernetes CI_CD Linux Git automation monitoring cloud_infrastructure Terraform
+Cloud Architect,AWS Azure GCP cloud_infrastructure Terraform Docker Kubernetes networking security serverless
+Cybersecurity Analyst,networking security Linux Python penetration_testing firewalls cryptography SIEM incident_response
+Mobile Developer,Swift Kotlin React_Native Flutter Java Android iOS Git REST_APIs UI_UX
+AI Research Engineer,Python PyTorch TensorFlow deep_learning mathematics optimization research papers neural_networks
+Data Engineer,Python SQL Spark Hadoop ETL data_pipelines AWS cloud_infrastructure databases Airflow
+Site Reliability Engineer,Linux Python automation monitoring Docker Kubernetes AWS incident_management performance
+Blockchain Developer,Solidity Web3 JavaScript cryptography smart_contracts Ethereum Python Go distributed_systems
+NLP Engineer,Python NLP transformers BERT PyTorch scikit_learn linguistics text_processing machine_learning
+Computer Vision Engineer,Python OpenCV TensorFlow deep_learning image_processing neural_networks mathematics PyTorch
+Systems Programmer,C C++ Linux operating_systems memory_management networking performance optimization assembly
+Game Developer,C++ Unity Python OpenGL mathematics physics_simulation 3D_graphics game_design
+Database Administrator,SQL PostgreSQL MySQL Oracle performance_tuning backup indexing query_optimization security
+Robotics Engineer,Python C++ ROS robotics control_systems mathematics sensors embedded_systems automation
